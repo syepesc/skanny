@@ -12,6 +12,11 @@ Learn more about the API -> https://docs.aws.amazon.com/textract/latest/dg/analy
 Learn more about the response object -> https://docs.aws.amazon.com/textract/latest/dg/identitydocumentfields.html
 """
 
+from aws_lambda_powertools import Logger
+from aws_lambda_powertools.utilities.typing import LambdaContext
 
-def lambda_handler(event: dict, context: dict) -> None:
+logger = Logger(service="analyze_id")
+
+
+def lambda_handler(event: dict, context: LambdaContext) -> None:
     return True
