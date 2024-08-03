@@ -1,0 +1,11 @@
+# vim: ft=toml
+version = 0.1
+
+[default.deploy.parameters]
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+stack_name = "skanny-qa"
+s3_prefix = "skanny-qa"
+parameter_overrides = """
+    LogLevel="DEBUG"
+"""
