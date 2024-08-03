@@ -5,6 +5,7 @@ Description: Skanny the AI tool to analyze and extract relevant data from PDF's 
 Globals:
   Function:
     Tags:
+      project: !Sub "${AWS::StackName}"
       version: "v0.0.1"
     Timeout: 60
     MemorySize: 128
@@ -32,3 +33,12 @@ Resources:
       CompatibleRuntimes: [!Ref PythonRuntime]
     Metadata:
       BuildMethod: !Ref PythonRuntime
+
+# ------------------------------ project lambdas ----------------------------
+  AnalyzeId:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-AnalyzeId"
+      Description: Analyze and extract data from ID documents and images
+      CodeUri: lambdas/analyze_id
+      Handler: analyze_id.lambda_handler
