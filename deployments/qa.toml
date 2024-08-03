@@ -2,7 +2,7 @@
 version = 0.1
 
 [default.deploy.parameters]
-region = "us-east-1"
+region = "us-west-2"
 capabilities = "CAPABILITY_IAM"
 stack_name = "skanny-qa"
 s3_prefix = "skanny-qa"
