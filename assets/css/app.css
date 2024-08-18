@@ -3,3 +3,20 @@
 @import "tailwindcss/utilities";
 
 /* This file is for your main application CSS */
+
+body {
+    @apply antialiased relative min-h-screen bg-white
+}
+
+main {
+    @apply m-auto max-w-7xl
+}
+
+#public-layout-header {
+    @apply w-full border-2 border-blue-500
+}
+
+
+#public-layout-footer {
+    @apply absolute bottom-0 w-full border-2 border-blue-500
+}
