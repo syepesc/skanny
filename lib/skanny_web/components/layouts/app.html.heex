@@ -1,8 +1,8 @@
-<header id="public-layout-header">app header</header>
-<main>
-  <div>
-    <.flash_group flash={@flash} />
-    <%= @inner_content %>
-  </div>
-</main>
-<footer id="public-layout-footer">app footer</footer>
+<div id="public-page-container">
+  <header id="public-header">app header</header>
+  <main id="public-main">
+      <.flash_group flash={@flash} />
+      <%= @inner_content %>
+  </main>
+  <footer id="public-footer">app footer</footer>
+</div>
