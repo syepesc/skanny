@@ -4,24 +4,26 @@ defmodule SkannyWeb.HomeLive do
   require Logger
 
   @allowed_file_types ~w(.jpg .jpeg .pdf)
+  @kilo_bytes 1000
+  @max_file_size_in_bytes 100 * @kilo_bytes
   @max_entries 2
-  @max_file_size_in_bytes 4_000_000
   # The chunk size in bytes to send when uploading. Defaults 64_000.
-  @chunk_size_in_bytes 64_000
+  @chunk_size_in_bytes 50
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     socket =
       socket
       |> assign(:uploaded_files, [])
-      |> allow_upload(:avatar,
+      |> assign(:allowed_file_types, @allowed_file_types)
+      |> allow_upload(:file,
         accept: @allowed_file_types,
         max_entries: @max_entries,
         max_file_size: @max_file_size_in_bytes,
         chunk_size: @chunk_size_in_bytes
       )
 
-    {:ok, socket}
+    {:ok, socket, layout: false}
   end
 
   @impl Phoenix.LiveView
@@ -34,7 +36,7 @@ defmodule SkannyWeb.HomeLive do
 
   @impl Phoenix.LiveView
   def handle_event("save", _params, socket) do
-    uploaded_files = consume_uploaded_entries(socket, :avatar, &save_to_disk(&1, &2))
+    uploaded_files = consume_uploaded_entries(socket, :file, &save_to_disk(&1, &2))
 
     {flash_kind, flash_message} =
       case length(uploaded_files) do
@@ -53,66 +55,86 @@ defmodule SkannyWeb.HomeLive do
 
   @impl Phoenix.LiveView
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :avatar, ref)}
+    {:noreply, cancel_upload(socket, :file, ref)}
   end
 
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <%!-- use phx-drop-target with the upload ref to enable file drag and drop --%>
-    <div phx-drop-target={@uploads.avatar.ref} class="min-h-screen">
-      <div class="border-2 border-red-500">
-        <form id="upload-form" phx-submit="save" phx-change="validate">
-          <.live_file_input upload={@uploads.avatar} class="border-4 border-green-500" />
-          <button
-            type="submit"
-            disabled={any_errors?(@uploads.avatar)}
-            class="disabled:border-8 border-red-500"
+    <div
+      id="drop-area"
+      phx-hook="DragAndDropHook"
+      phx-drop-target={@uploads.file.ref}
+      class="drop-area"
+    >
+      <div id="page-container" class="flex flex-col m-auto gap-8 sm:p-8 p-4 max-w-4xl">
+        <%!-- welcome paragraph --%>
+        <div id="welcome-paragraph" class="text-center">
+          <%= "Choose or Drop your documents or images here to extract id data from them (supported files: #{@allowed_file_types})." %>
+        </div>
+
+        <%!-- choose files and upload button --%>
+        <form
+          id="upload-form"
+          phx-submit="save"
+          phx-change="validate"
+          class="flex justify-center gap-4"
+        >
+          <label
+            for={@uploads.file.ref}
+            class="cursor-pointer rounded-lg p-2 w-full text-center border-4 hover:bg-gray-500"
           >
+            Choose Files
+          </label>
+          <.live_file_input id="choose-file-button" upload={@uploads.file} class="hidden" />
+          <.button id="upload-button" type="submit" disabled={any_errors?(@uploads.file)}>
             Upload
-          </button>
+          </.button>
         </form>
-      </div>
 
-      <div :for={err <- upload_errors(@uploads.avatar)}>
-        <p class="border-4 border-cyan-500 alert alert-danger"><%= error_to_string(err) %></p>
-      </div>
-
-      <div><%= @uploaded_files %></div>
-
-      <%!-- render each avatar entry --%>
-      <div :for={entry <- @uploads.avatar.entries}>
-        <article class="upload-entry">
-          <figure>
-            <.live_img_preview entry={entry} />
-            <figcaption><%= entry.client_name %></figcaption>
-          </figure>
-
-          <progress value={entry.progress} max="100"><%= entry.progress %>%</progress>
-
-          <button
-            type="button"
-            phx-click="cancel-upload"
-            phx-value-ref={entry.ref}
-            aria-label="cancel"
+        <div id="files" class="flex flex-col gap-2">
+          <%!-- render general errors like: "you have selected many files" --%>
+          <div
+            :for={err <- upload_errors(@uploads.file)}
+            class="w-full rounded-lg p-2 border-2 border-red-500 text-center"
           >
-            &times;
-          </button>
-
-          <div :for={err <- upload_errors(@uploads.avatar, entry)}>
-            <p class="alert alert-danger"><%= error_to_string(err) %></p>
+            <%= error_to_string(err) %>
           </div>
-        </article>
+
+          <%!-- render each file --%>
+          <div
+            :for={file <- @uploads.file.entries}
+            id={"file-#{file.ref}"}
+            class="flex flex-col w-full rounded-lg p-2 border-4"
+          >
+            <%!-- render each file error specific to file --%>
+            <div :for={err <- upload_errors(@uploads.file, file)} class="text-red-500 p-2">
+              <%= error_to_string(err) %>
+            </div>
+
+            <div class="flex gap-4 items-center p-2">
+              <div class="cursor-pointer">
+                <.icon phx-click="cancel-upload" phx-value-ref={file.ref} name="hero-trash" />
+              </div>
+              <div class="text-pretty truncate"><%= file.client_name %></div>
+              <%!-- <progress value={file.progress} max="100"></progress> --%>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     """
   end
 
-  defp error_to_string(:too_large), do: "Too large"
-  defp error_to_string(:too_many_files), do: "You have selected too many files"
-  defp error_to_string(:not_accepted), do: "You have selected an unacceptable file type"
+  defp error_to_string(:too_large), do: "File is too large"
 
-  defp save_to_disk(%{path: path}, _entry) do
+  defp error_to_string(:not_accepted), do: "Unsupported file type"
+
+  defp error_to_string(:too_many_files),
+    do: "You have selected too many files, maximum is #{@max_entries} files per upload"
+
+  defp save_to_disk(%{path: path}, _file) do
     dest =
       :skanny
       |> Application.app_dir("priv/static/uploads")
@@ -124,7 +146,7 @@ defmodule SkannyWeb.HomeLive do
   end
 
   defp any_errors?(%Phoenix.LiveView.UploadConfig{} = struct) do
-    is_upload_ok? = upload_errors(struct) |> Enum.empty?()
+    is_upload_ok? = struct |> upload_errors() |> Enum.empty?()
 
     are_entries_ok? =
       struct.entries

@@ -5,29 +5,25 @@
 /* This file is for your main application CSS */
 
 body {
-    @apply antialiased bg-white
-}
-
-#public-page-container {
-    @apply flex flex-col h-screen
+    @apply antialiased relative min-h-screen bg-white
 }
 
 #public-header {
-    @apply shrink-0 border-2 border-blue-500
+    @apply w-full border-2 border-blue-500
 }
 
 #public-main {
-    @apply flex grow border-2 border-green-500
+    @apply m-auto max-w-7xl border-green-500
 }
 
 #public-footer {
-    @apply border-2 border-blue-500
+    @apply absolute bottom-0 w-full border-2 border-blue-500
 }
 
 .drop-area {
-    @apply w-full border-4 rounded-lg border-dashed border-lightGray transition-all duration-500 ease-in-out
+    @apply min-h-screen transition-all duration-500 ease-in-out
 }
 
 .drop-area.hover {
-    @apply border-4 border-graniteGray bg-brightGray;
+    @apply border-4 border-black bg-gray-500
 }

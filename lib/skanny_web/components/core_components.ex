@@ -233,6 +233,7 @@ defmodule SkannyWeb.CoreComponents do
       class={[
         "phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3",
         "text-sm font-semibold leading-6 text-white active:text-white/80",
+        "disabled:bg-gray-500",
         @class
       ]}
       {@rest}
@@ -590,10 +591,11 @@ defmodule SkannyWeb.CoreComponents do
   """
   attr :name, :string, required: true
   attr :class, :string, default: nil
+  attr :rest, :global
 
   def icon(%{name: "hero-" <> _} = assigns) do
     ~H"""
-    <span class={[@name, @class]} />
+    <span class={[@name, @class]} {@rest} />
     """
   end
 
