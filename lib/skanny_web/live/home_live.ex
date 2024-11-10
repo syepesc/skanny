@@ -23,11 +23,11 @@ defmodule SkannyWeb.HomeLive do
         chunk_size: @chunk_size_in_bytes
       )
 
-    {:ok, socket, layout: false}
+    {:ok, socket}
   end
 
   @impl Phoenix.LiveView
-  def handle_event("validate", _params, socket) do
+  def handle_event("validate-files", _params, socket) do
     # No need to implement any validations for the upload input,
     # they are already handled by allow_upload/3.
     # Learn more -> https://hexdocs.pm/phoenix_live_view/uploads.html#entry-validation
@@ -35,8 +35,9 @@ defmodule SkannyWeb.HomeLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_event("save", _params, socket) do
-    uploaded_files = consume_uploaded_entries(socket, :file, &save_to_disk(&1, &2))
+  def handle_event("upload-files", _params, socket) do
+    uploaded_files =
+      consume_uploaded_entries(socket, :file, &save_to_disk(&1, &2))
 
     {flash_kind, flash_message} =
       case length(uploaded_files) do
@@ -68,7 +69,7 @@ defmodule SkannyWeb.HomeLive do
       phx-drop-target={@uploads.file.ref}
       class="drop-area"
     >
-      <div id="page-container" class="flex flex-col m-auto gap-8 sm:p-8 p-4 max-w-4xl">
+      <div id="page-content" class="flex flex-col gap-8 p-8">
         <%!-- welcome paragraph --%>
         <div id="welcome-paragraph" class="text-center">
           <%= "Choose or Drop your documents or images here to extract id data from them (supported files: #{@allowed_file_types})." %>
@@ -77,13 +78,13 @@ defmodule SkannyWeb.HomeLive do
         <%!-- choose files and upload button --%>
         <form
           id="upload-form"
-          phx-submit="save"
-          phx-change="validate"
+          phx-submit="upload-files"
+          phx-change="validate-files"
           class="flex justify-center gap-4"
         >
           <label
             for={@uploads.file.ref}
-            class="cursor-pointer rounded-lg p-2 w-full text-center border-4 hover:bg-gray-500"
+            class="cursor-pointer rounded-lg p-2 w-full text-center border-4 border-gray-300 hover:bg-gray-100"
           >
             Choose Files
           </label>
@@ -97,27 +98,36 @@ defmodule SkannyWeb.HomeLive do
           <%!-- render general errors like: "you have selected many files" --%>
           <div
             :for={err <- upload_errors(@uploads.file)}
-            class="w-full rounded-lg p-2 border-2 border-red-500 text-center"
+            id="general-errors"
+            class="rounded-lg p-2 border-2 border-red-500 text-center text-red-500 hover:bg-red-100"
           >
             <%= error_to_string(err) %>
           </div>
 
-          <%!-- render each file --%>
+          <%!-- render file --%>
           <div
             :for={file <- @uploads.file.entries}
             id={"file-#{file.ref}"}
-            class="flex flex-col w-full rounded-lg p-2 border-4"
+            class={[
+              "flex flex-col rounded-lg py-2 px-4 gap-2 border-2 overflow-hidden",
+              if(file.valid?,
+                do: "border-green-500 hover:bg-green-100",
+                else: "border-red-500 hover:bg-red-100"
+              )
+            ]}
           >
-            <%!-- render each file error specific to file --%>
-            <div :for={err <- upload_errors(@uploads.file, file)} class="text-red-500 p-2">
+            <%!-- render error specific to each file --%>
+            <div :for={err <- upload_errors(@uploads.file, file)} class="text-red-500">
               <%= error_to_string(err) %>
             </div>
 
-            <div class="flex gap-4 items-center p-2">
+            <div class="flex gap-4 items-center">
               <div class="cursor-pointer">
                 <.icon phx-click="cancel-upload" phx-value-ref={file.ref} name="hero-trash" />
               </div>
-              <div class="text-pretty truncate"><%= file.client_name %></div>
+              <div class={["break-all", if(not file.valid?, do: "text-red-500")]}>
+                <%= file.client_name %>
+              </div>
               <%!-- <progress value={file.progress} max="100"></progress> --%>
             </div>
           </div>
@@ -126,13 +136,6 @@ defmodule SkannyWeb.HomeLive do
     </div>
     """
   end
-
-  defp error_to_string(:too_large), do: "File is too large"
-
-  defp error_to_string(:not_accepted), do: "Unsupported file type"
-
-  defp error_to_string(:too_many_files),
-    do: "You have selected too many files, maximum is #{@max_entries} files per upload"
 
   defp save_to_disk(%{path: path}, _file) do
     dest =
@@ -145,7 +148,15 @@ defmodule SkannyWeb.HomeLive do
     {:ok, ~p"/uploads/#{Path.basename(path)}"}
   end
 
+  defp error_to_string(:too_large), do: "File is too large"
+
+  defp error_to_string(:not_accepted), do: "Unsupported file type"
+
+  defp error_to_string(:too_many_files),
+    do: "Too many files, max #{@max_entries} files per upload"
+
   defp any_errors?(%Phoenix.LiveView.UploadConfig{} = struct) do
+    # is recommended to use these predefine functions to get errors instead of accessing the struct
     is_upload_ok? = struct |> upload_errors() |> Enum.empty?()
 
     are_entries_ok? =
