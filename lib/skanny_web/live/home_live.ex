@@ -31,7 +31,6 @@ defmodule SkannyWeb.HomeLive do
     # No need to implement any validations for the upload input,
     # they are already handled by allow_upload/3.
     # Learn more -> https://hexdocs.pm/phoenix_live_view/uploads.html#entry-validation
-    IO.inspect(socket.assigns, label: "VALIDATE UPLOAD --->")
     {:noreply, socket}
   end
 
@@ -39,9 +38,6 @@ defmodule SkannyWeb.HomeLive do
   def handle_event("upload-files", _params, socket) do
     uploaded_files =
       consume_uploaded_entries(socket, :jpg_jpeg_pdf, &save_to_disk(&1, &2))
-      |> IO.inspect(label: "UPLOADED FILES --->")
-
-    IO.inspect(socket, label: "SOCKET --->")
 
     {flash_kind, flash_message} =
       case length(uploaded_files) do
@@ -54,7 +50,6 @@ defmodule SkannyWeb.HomeLive do
       socket
       |> update(:uploaded_files, &(&1 ++ uploaded_files))
       |> put_flash(flash_kind, flash_message)
-      |> IO.inspect(label: "SOCKET AFTER --->")
 
     {:noreply, socket}
   end
@@ -131,6 +126,7 @@ defmodule SkannyWeb.HomeLive do
               <div class="cursor-pointer">
                 <.icon phx-click="cancel-upload" phx-value-ref={file.ref} name="hero-trash" />
               </div>
+              <div :if={file.progress > 0}><.icon class="animate-spin" name="hero-arrow-path" /></div>
               <div class={["break-all", if(not file.valid?, do: "text-red-500")]}>
                 <%= file.client_name %>
               </div>
@@ -156,11 +152,6 @@ defmodule SkannyWeb.HomeLive do
               )
             ]}
           >
-            <%!-- render error specific to each file --%>
-            <%!-- <div :for={err <- upload_errors(@uploads.jpg_jpeg_pdf, file)} class="text-red-500">
-              <%= error_to_string(err) %>
-            </div> --%>
-
             <div class="flex gap-4 items-center">
               <div><.icon class="text-green-500" name="hero-check" /></div>
               <div class={["break-all", if(not file.done?, do: "text-red-500")]}>
