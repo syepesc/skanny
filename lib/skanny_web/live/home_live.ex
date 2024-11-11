@@ -138,12 +138,44 @@ defmodule SkannyWeb.HomeLive do
             </div>
           </div>
         </div>
+
+        <%!-- uploaded files list
+              this exist because LiveView Uploads remove uploaded files by default from @uploads
+              and we want to keep the the files after uploaded
+        --%>
+        <div id="uploaded-files" class="flex flex-col gap-2">
+          <%!-- render file --%>
+          <div
+            :for={file <- @uploaded_files}
+            id={"uploaded-file-#{file.ref}"}
+            class={[
+              "flex flex-col rounded-lg py-2 px-4 gap-2 border-2 overflow-hidden",
+              if(file.valid?,
+                do: "border-green-500 hover:bg-green-100",
+                else: "border-red-500 hover:bg-red-100"
+              )
+            ]}
+          >
+            <%!-- render error specific to each file --%>
+            <%!-- <div :for={err <- upload_errors(@uploads.jpg_jpeg_pdf, file)} class="text-red-500">
+              <%= error_to_string(err) %>
+            </div> --%>
+
+            <div class="flex gap-4 items-center">
+              <div><.icon class="text-green-500" name="hero-check" /></div>
+              <div class={["break-all", if(not file.done?, do: "text-red-500")]}>
+                <%= file.client_name %>
+              </div>
+              <%!-- <progress value={file.progress} max="100"></progress> --%>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     """
   end
 
-  defp save_to_disk(%{path: path}, _file) do
+  defp save_to_disk(%{path: path}, file) do
     dest =
       :skanny
       |> Application.app_dir("priv/static/uploads")
@@ -151,7 +183,7 @@ defmodule SkannyWeb.HomeLive do
 
     # You will need to create `priv/static/uploads` for `File.cp!/2` to work.
     File.cp!(path, dest)
-    {:ok, ~p"/uploads/#{Path.basename(path)}"}
+    {:ok, file}
   end
 
   defp error_to_string(:too_large), do: "File is too large"
