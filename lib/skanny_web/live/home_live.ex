@@ -8,7 +8,7 @@ defmodule SkannyWeb.HomeLive do
   @max_file_size_in_bytes 100 * @kilo_bytes
   @max_entries 2
   # The chunk size in bytes to send when uploading. Defaults 64_000.
-  @chunk_size_in_bytes 50
+  @chunk_size_in_bytes 20
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
@@ -16,7 +16,7 @@ defmodule SkannyWeb.HomeLive do
       socket
       |> assign(:uploaded_files, [])
       |> assign(:allowed_file_types, @allowed_file_types)
-      |> allow_upload(:file,
+      |> allow_upload(:jpg_jpeg_pdf,
         accept: @allowed_file_types,
         max_entries: @max_entries,
         max_file_size: @max_file_size_in_bytes,
@@ -31,13 +31,17 @@ defmodule SkannyWeb.HomeLive do
     # No need to implement any validations for the upload input,
     # they are already handled by allow_upload/3.
     # Learn more -> https://hexdocs.pm/phoenix_live_view/uploads.html#entry-validation
+    IO.inspect(socket.assigns, label: "VALIDATE UPLOAD --->")
     {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
   def handle_event("upload-files", _params, socket) do
     uploaded_files =
-      consume_uploaded_entries(socket, :file, &save_to_disk(&1, &2))
+      consume_uploaded_entries(socket, :jpg_jpeg_pdf, &save_to_disk(&1, &2))
+      |> IO.inspect(label: "UPLOADED FILES --->")
+
+    IO.inspect(socket, label: "SOCKET --->")
 
     {flash_kind, flash_message} =
       case length(uploaded_files) do
@@ -50,13 +54,14 @@ defmodule SkannyWeb.HomeLive do
       socket
       |> update(:uploaded_files, &(&1 ++ uploaded_files))
       |> put_flash(flash_kind, flash_message)
+      |> IO.inspect(label: "SOCKET AFTER --->")
 
     {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :file, ref)}
+    {:noreply, cancel_upload(socket, :jpg_jpeg_pdf, ref)}
   end
 
   @impl Phoenix.LiveView
@@ -66,7 +71,7 @@ defmodule SkannyWeb.HomeLive do
     <div
       id="drop-area"
       phx-hook="DragAndDropHook"
-      phx-drop-target={@uploads.file.ref}
+      phx-drop-target={@uploads.jpg_jpeg_pdf.ref}
       class="drop-area"
     >
       <div id="page-content" class="flex flex-col gap-8 p-8">
@@ -83,21 +88,22 @@ defmodule SkannyWeb.HomeLive do
           class="flex justify-center gap-4"
         >
           <label
-            for={@uploads.file.ref}
+            for={@uploads.jpg_jpeg_pdf.ref}
             class="cursor-pointer rounded-lg p-2 w-full text-center border-4 border-gray-300 hover:bg-gray-100"
           >
             Choose Files
           </label>
-          <.live_file_input id="choose-file-button" upload={@uploads.file} class="hidden" />
-          <.button id="upload-button" type="submit" disabled={any_errors?(@uploads.file)}>
+          <.live_file_input id="choose-file-button" upload={@uploads.jpg_jpeg_pdf} class="hidden" />
+          <.button id="upload-button" type="submit" disabled={any_errors?(@uploads.jpg_jpeg_pdf)}>
             Upload
           </.button>
         </form>
 
-        <div id="files" class="flex flex-col gap-2">
+        <%!-- files to upload list --%>
+        <div id="files-to-upload" class="flex flex-col gap-2">
           <%!-- render general errors like: "you have selected many files" --%>
           <div
-            :for={err <- upload_errors(@uploads.file)}
+            :for={err <- upload_errors(@uploads.jpg_jpeg_pdf)}
             id="general-errors"
             class="rounded-lg p-2 border-2 border-red-500 text-center text-red-500 hover:bg-red-100"
           >
@@ -106,7 +112,7 @@ defmodule SkannyWeb.HomeLive do
 
           <%!-- render file --%>
           <div
-            :for={file <- @uploads.file.entries}
+            :for={file <- @uploads.jpg_jpeg_pdf.entries}
             id={"file-#{file.ref}"}
             class={[
               "flex flex-col rounded-lg py-2 px-4 gap-2 border-2 overflow-hidden",
@@ -117,7 +123,7 @@ defmodule SkannyWeb.HomeLive do
             ]}
           >
             <%!-- render error specific to each file --%>
-            <div :for={err <- upload_errors(@uploads.file, file)} class="text-red-500">
+            <div :for={err <- upload_errors(@uploads.jpg_jpeg_pdf, file)} class="text-red-500">
               <%= error_to_string(err) %>
             </div>
 
