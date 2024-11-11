@@ -69,11 +69,11 @@ defmodule SkannyWeb.HomeLive do
       phx-drop-target={@uploads.jpg_jpeg_pdf.ref}
       class="drop-area"
     >
-      <div id="page-content" class="flex flex-col gap-8 p-8">
+      <div id="page-content" class="flex flex-col gap-8 p-8 w-full max-w-4xl">
         <%!-- welcome paragraph --%>
-        <div id="welcome-paragraph" class="text-center">
+        <h1 id="welcome-paragraph" class="text-center">
           <%= "Choose or Drop your documents or images here to extract id data from them (supported files: #{@allowed_file_types})." %>
-        </div>
+        </h1>
 
         <%!-- choose files and upload button --%>
         <form
@@ -95,7 +95,12 @@ defmodule SkannyWeb.HomeLive do
         </form>
 
         <%!-- files to upload list --%>
-        <div id="files-to-upload" class="flex flex-col gap-2">
+        <div
+          :if={not Enum.empty?(@uploads.jpg_jpeg_pdf.entries)}
+          id="files-to-upload"
+          class="flex flex-col gap-2"
+        >
+          <h2 :if={not Enum.empty?(@uploads.jpg_jpeg_pdf.entries)}>Files to Upload</h2>
           <%!-- render general errors like: "you have selected many files" --%>
           <div
             :for={err <- upload_errors(@uploads.jpg_jpeg_pdf)}
@@ -139,7 +144,8 @@ defmodule SkannyWeb.HomeLive do
               this exist because LiveView Uploads remove uploaded files by default from @uploads
               and we want to keep the the files after uploaded
         --%>
-        <div id="uploaded-files" class="flex flex-col gap-2">
+        <div :if={not Enum.empty?(@uploaded_files)} id="uploaded-files" class="flex flex-col gap-2">
+          <h2 :if={not Enum.empty?(@uploaded_files)}>Uploaded Files</h2>
           <%!-- render file --%>
           <div
             :for={file <- @uploaded_files}
