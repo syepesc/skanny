@@ -60,6 +60,12 @@ defmodule SkannyWeb.HomeLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_event("delete-uploaded-file", %{"ref" => ref}, socket) do
+    filtered_files = Enum.filter(socket.assigns.uploaded_files, fn f -> f.ref == ref end)
+    {:noreply, update(socket, :uploaded_files, &(&1 -- filtered_files))}
+  end
+
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <%!-- use phx-drop-target with the upload ref to enable file drag and drop --%>
@@ -88,7 +94,12 @@ defmodule SkannyWeb.HomeLive do
           >
             Choose Files
           </label>
-          <.live_file_input id="choose-file-button" upload={@uploads.jpg_jpeg_pdf} class="hidden" />
+          <.live_file_input
+            id="choose-file-button"
+            upload={@uploads.jpg_jpeg_pdf}
+            disabled={false}
+            class="hidden"
+          />
           <.button id="upload-button" type="submit" disabled={any_errors?(@uploads.jpg_jpeg_pdf)}>
             Upload
           </.button>
@@ -115,7 +126,7 @@ defmodule SkannyWeb.HomeLive do
             :for={file <- @uploads.jpg_jpeg_pdf.entries}
             id={"file-#{file.ref}"}
             class={[
-              "flex flex-col rounded-lg py-2 px-4 gap-2 border-2 overflow-hidden",
+              "flex flex-col rounded-lg py-2 px-4 gap-2 border-2",
               if(file.valid?,
                 do: "border-green-500 hover:bg-green-100",
                 else: "border-red-500 hover:bg-red-100"
@@ -151,20 +162,21 @@ defmodule SkannyWeb.HomeLive do
             :for={file <- @uploaded_files}
             id={"uploaded-file-#{file.ref}"}
             class={[
-              "flex flex-col rounded-lg py-2 px-4 gap-2 border-2 overflow-hidden",
+              "flex items-center rounded-lg py-2 px-4 gap-2 border-2",
               if(file.valid?,
                 do: "border-green-500 hover:bg-green-100",
                 else: "border-red-500 hover:bg-red-100"
               )
             ]}
           >
-            <div class="flex gap-4 items-center">
-              <div><.icon class="text-green-500" name="hero-check" /></div>
-              <div class={["break-all", if(not file.done?, do: "text-red-500")]}>
-                <%= file.client_name %>
-              </div>
-              <%!-- <progress value={file.progress} max="100"></progress> --%>
+            <div class="cursor-pointer">
+              <.icon phx-click="delete-uploaded-file" phx-value-ref={file.ref} name="hero-trash" />
             </div>
+            <div><.icon class="text-green-500" name="hero-check" /></div>
+            <div class={["break-all", if(not file.done?, do: "text-red-500")]}>
+              <%= file.client_name %>
+            </div>
+            <%!-- <progress value={file.progress} max="100"></progress> --%>
           </div>
         </div>
       </div>
@@ -202,3 +214,6 @@ defmodule SkannyWeb.HomeLive do
     !(is_upload_ok? and are_entries_ok?)
   end
 end
+
+# TODO: disabled choose file button (line 97) while uploading file is in progress, check -> https://hexdocs.pm/phoenix_live_view/bindings.html
+# TODO: upload files to aws s3
