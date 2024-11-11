@@ -61,8 +61,8 @@ defmodule SkannyWeb.HomeLive do
 
   @impl Phoenix.LiveView
   def handle_event("delete-uploaded-file", %{"ref" => ref}, socket) do
-    filtered_files = Enum.filter(socket.assigns.uploaded_files, fn f -> f.ref == ref end)
-    {:noreply, update(socket, :uploaded_files, &(&1 -- filtered_files))}
+    file_to_remove = Enum.filter(socket.assigns.uploaded_files, fn f -> f.ref == ref end)
+    {:noreply, update(socket, :uploaded_files, &(&1 -- file_to_remove))}
   end
 
   @impl Phoenix.LiveView
@@ -100,7 +100,12 @@ defmodule SkannyWeb.HomeLive do
             disabled={false}
             class="hidden"
           />
-          <.button id="upload-button" type="submit" disabled={any_errors?(@uploads.jpg_jpeg_pdf)}>
+          <.button
+            id="upload-button"
+            type="submit"
+            disabled={any_errors?(@uploads.jpg_jpeg_pdf)}
+            class="disabled:cursor-not-allowed"
+          >
             Upload
           </.button>
         </form>

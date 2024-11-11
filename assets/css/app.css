@@ -25,9 +25,9 @@ body {
 }
 
 .drop-area {
-    @apply flex justify-center items-start h-full transition-all duration-500 ease-in-out
+    @apply flex justify-center items-start h-full transition-all duration-100 ease-in-out
 }
 
 .drop-area.hover {
-    @apply border-4 border-black bg-gray-500
+    @apply border-8 rounded-lg border-gray-300 border-dashed
 }
