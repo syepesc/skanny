@@ -18,6 +18,7 @@ defmodule SkannyWeb.Router do
     pipe_through :browser
 
     live "/", HomeLive
+    live "/upload-to-disk", UploadToDiskLive
   end
 
   # Other scopes may use custom stacks.
