@@ -158,7 +158,7 @@ defmodule SkannyWeb.UploadToDiskLive do
 
         <%!-- uploaded files list
               this exist because LiveView Uploads remove uploaded files by default from @uploads
-              and we want to keep the the files after uploaded
+              when uploading to disk, however, we want to keep the files after uploaded to show them in UI
         --%>
         <div :if={not Enum.empty?(@uploaded_files)} id="uploaded-files" class="flex flex-col gap-2">
           <h2 :if={not Enum.empty?(@uploaded_files)}>Uploaded Files</h2>
@@ -181,7 +181,6 @@ defmodule SkannyWeb.UploadToDiskLive do
             <div class={["break-all", if(not file.done?, do: "text-red-500")]}>
               <%= file.client_name %>
             </div>
-            <%!-- <progress value={file.progress} max="100"></progress> --%>
           </div>
         </div>
       </div>
@@ -222,3 +221,4 @@ end
 
 # TODO: disabled choose file button (line 97) while uploading file is in progress, check -> https://hexdocs.pm/phoenix_live_view/bindings.html
 # TODO: add preview button for every entry
+# TODO: add error on duplicate files rigth after user drop the files in the UI
