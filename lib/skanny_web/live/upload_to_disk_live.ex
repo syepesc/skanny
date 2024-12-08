@@ -1,6 +1,8 @@
 defmodule SkannyWeb.UploadToDiskLive do
   use SkannyWeb, :live_view
 
+  alias Skanny.CommonUtils
+
   require Logger
 
   @allowed_file_types ~w(.jpg .jpeg .pdf)
@@ -35,20 +37,24 @@ defmodule SkannyWeb.UploadToDiskLive do
 
   @impl Phoenix.LiveView
   def handle_event("upload-files", _params, socket) do
-    uploaded_files =
-      consume_uploaded_entries(socket, :jpg_jpeg_pdf, &save_to_disk(&1, &2))
-
-    {flash_kind, flash_message} =
-      case length(uploaded_files) do
-        0 -> {:error, "Please select at least one file to proceed"}
-        1 -> {:info, "Successfully uploaded 1 file"}
-        n -> {:info, "Successfully uploaded #{n} files"}
-      end
+    uploaded_files = consume_uploaded_entries(socket, :jpg_jpeg_pdf, &save_to_disk(&1, &2))
 
     socket =
-      socket
-      |> update(:uploaded_files, &(&1 ++ uploaded_files))
-      |> put_flash(flash_kind, flash_message)
+      if Enum.empty?(uploaded_files) do
+        # do nothing
+        socket
+      else
+        # update socket and send flash message
+        {flash_kind, flash_message} =
+          case length(uploaded_files) do
+            1 -> {:info, "Successfully uploaded 1 file"}
+            n -> {:info, "Successfully uploaded #{n} files"}
+          end
+
+        socket
+        |> update(:uploaded_files, &(&1 ++ uploaded_files))
+        |> put_flash(flash_kind, flash_message)
+      end
 
     {:noreply, socket}
   end
@@ -60,6 +66,7 @@ defmodule SkannyWeb.UploadToDiskLive do
 
   @impl Phoenix.LiveView
   def handle_event("delete-uploaded-file", %{"ref" => ref}, socket) do
+    # TODO: remove from disk
     file_to_remove = Enum.filter(socket.assigns.uploaded_files, fn f -> f.ref == ref end)
     {:noreply, update(socket, :uploaded_files, &(&1 -- file_to_remove))}
   end
@@ -157,8 +164,8 @@ defmodule SkannyWeb.UploadToDiskLive do
         </div>
 
         <%!-- uploaded files list
-              this exist because LiveView Uploads remove uploaded files by default from @uploads
-              when uploading to disk, however, we want to keep the files after uploaded to show them in UI
+              this exist because LiveView Uploads remove uploaded files from @uploads when
+              calling `consume_uploaded_entries()`, however, we want to keep the files after uploaded to show them in UI
         --%>
         <div :if={not Enum.empty?(@uploaded_files)} id="uploaded-files" class="flex flex-col gap-2">
           <h2>Uploaded Files</h2>
@@ -187,10 +194,12 @@ defmodule SkannyWeb.UploadToDiskLive do
   end
 
   defp save_to_disk(%{path: path}, file) do
+    file_name = "#{CommonUtils.generate_random_id()}--#{file.client_name}"
+
     dest =
       :skanny
       |> Application.app_dir("priv/static/uploads")
-      |> Path.join(Path.basename(path))
+      |> Path.join(Path.basename(file_name))
 
     # You will need to create `priv/static/uploads` for `File.cp!/2` to work.
     File.cp!(path, dest)
@@ -213,10 +222,10 @@ defmodule SkannyWeb.UploadToDiskLive do
       |> Enum.flat_map(fn e -> upload_errors(struct, e) end)
       |> Enum.empty?()
 
-    !(is_upload_ok? and are_entries_ok?)
+    Enum.empty?(struct.entries) or !(is_upload_ok? and are_entries_ok?)
   end
 end
 
-# TODO: disabled choose file button (line 97) while uploading file is in progress, check -> https://hexdocs.pm/phoenix_live_view/bindings.html
+# TODO: disabled choose file button while uploading file is in progress, check -> https://hexdocs.pm/phoenix_live_view/bindings.html
 # TODO: add preview button for every entry
 # TODO: add error on duplicate files rigth after user drop the files in the UI
