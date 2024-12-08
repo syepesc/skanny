@@ -19,6 +19,7 @@ defmodule SkannyWeb.Router do
 
     live "/", HomeLive
     live "/upload-to-disk", UploadToDiskLive
+    live "/upload-to-s3", UploadToS3Live
   end
 
   # Other scopes may use custom stacks.

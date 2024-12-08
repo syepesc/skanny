@@ -28,5 +28,12 @@ Hooks.DragAndDropHook = {
     });
   }
 };
+  
+Hooks.HandleUploadInProgress = {
+  updated () {
+    // push event to let the server handle the logic
+    this.pushEvent("handle-upload-in-progress", {})
+  }
+};
 
 export default Hooks;
