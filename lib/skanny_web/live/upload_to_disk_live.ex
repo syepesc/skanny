@@ -124,7 +124,7 @@ defmodule SkannyWeb.UploadToDiskLive do
           id="files-to-upload"
           class="flex flex-col gap-2"
         >
-          <h2 :if={not Enum.empty?(@uploads.jpg_jpeg_pdf.entries)}>Files to Upload</h2>
+          <h2>Files to Upload</h2>
 
           <%!-- render file --%>
           <div
@@ -161,7 +161,7 @@ defmodule SkannyWeb.UploadToDiskLive do
               when uploading to disk, however, we want to keep the files after uploaded to show them in UI
         --%>
         <div :if={not Enum.empty?(@uploaded_files)} id="uploaded-files" class="flex flex-col gap-2">
-          <h2 :if={not Enum.empty?(@uploaded_files)}>Uploaded Files</h2>
+          <h2>Uploaded Files</h2>
           <%!-- render file --%>
           <div
             :for={file <- @uploaded_files}
@@ -178,9 +178,7 @@ defmodule SkannyWeb.UploadToDiskLive do
               <.icon phx-click="delete-uploaded-file" phx-value-ref={file.ref} name="hero-trash" />
             </div>
             <div><.icon class="text-green-500" name="hero-check" /></div>
-            <div class={["break-all", if(not file.done?, do: "text-red-500")]}>
-              <%= file.client_name %>
-            </div>
+            <div class="break-all"><%= file.client_name %></div>
           </div>
         </div>
       </div>
