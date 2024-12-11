@@ -7,7 +7,10 @@ Uploaders.S3 = function (entries, onViewError) {
     onViewError(() => xhr.abort())
 
     xhr.onload = () => xhr.status === 200 ? entry.progress(100) : entry.error()
-    xhr.onerror = () => entry.error()
+    xhr.onerror = () => {
+      entry.error();
+      console.debug("Error from XMLHttpRequest --->", xhr);
+    };
 
     // Learn more about xhr event listeners here -> https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest_API/Using_XMLHttpRequest#monitoring_progress
     xhr.upload.addEventListener("progress", (event) => {
