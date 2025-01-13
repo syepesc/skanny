@@ -4,8 +4,7 @@ defmodule SkannyWeb.UploadToDiskLive do
   require Logger
 
   @allowed_file_types ~w(.jpg .jpeg .pdf)
-  @kilo_bytes 1000
-  @max_file_size_in_bytes 100 * @kilo_bytes
+  @max_file_size_in_bytes 100_000
   @max_entries 2
   # The chunk size in bytes to send when uploading. Defaults 64_000.
   @chunk_size_in_bytes 20
@@ -78,7 +77,7 @@ defmodule SkannyWeb.UploadToDiskLive do
       <div id="page-content" class="flex flex-col gap-8 p-8 w-full max-w-4xl">
         <%!-- welcome paragraph --%>
         <h1 id="welcome-paragraph" class="text-center">
-          <%= "Choose or Drop your documents or images here to extract id data from them (supported files: #{@allowed_file_types})." %>
+          <%= "Choose or Drop your documents or images here to upload them locally in disk (supported files: #{@allowed_file_types})." %>
         </h1>
 
         <%!-- choose files and upload button --%>
@@ -148,10 +147,10 @@ defmodule SkannyWeb.UploadToDiskLive do
                 <.icon phx-click="cancel-upload" phx-value-ref={file.ref} name="hero-trash" />
               </div>
               <div :if={file.progress > 0}><.icon class="animate-spin" name="hero-arrow-path" /></div>
+              <div :if={file.progress > 0}><%= "#{file.progress}%" %></div>
               <div class={["break-all", if(not file.valid?, do: "text-red-500")]}>
                 <%= file.client_name %>
               </div>
-              <%!-- <progress value={file.progress} max="100"></progress> --%>
             </div>
           </div>
         </div>
@@ -221,3 +220,4 @@ defmodule SkannyWeb.UploadToDiskLive do
 end
 
 # TODO: disabled choose file button (line 97) while uploading file is in progress, check -> https://hexdocs.pm/phoenix_live_view/bindings.html
+# TODO: add preview button for every entry
