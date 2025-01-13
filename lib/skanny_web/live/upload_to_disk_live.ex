@@ -109,6 +109,15 @@ defmodule SkannyWeb.UploadToDiskLive do
           </.button>
         </form>
 
+        <%!-- render general errors like: "you have selected many files" --%>
+        <div
+          :for={err <- upload_errors(@uploads.jpg_jpeg_pdf)}
+          id="general-errors"
+          class="rounded-lg p-2 border-2 border-red-500 text-center text-red-500 hover:bg-red-100"
+        >
+          <%= error_to_string(err) %>
+        </div>
+
         <%!-- files to upload list --%>
         <div
           :if={not Enum.empty?(@uploads.jpg_jpeg_pdf.entries)}
@@ -116,14 +125,6 @@ defmodule SkannyWeb.UploadToDiskLive do
           class="flex flex-col gap-2"
         >
           <h2 :if={not Enum.empty?(@uploads.jpg_jpeg_pdf.entries)}>Files to Upload</h2>
-          <%!-- render general errors like: "you have selected many files" --%>
-          <div
-            :for={err <- upload_errors(@uploads.jpg_jpeg_pdf)}
-            id="general-errors"
-            class="rounded-lg p-2 border-2 border-red-500 text-center text-red-500 hover:bg-red-100"
-          >
-            <%= error_to_string(err) %>
-          </div>
 
           <%!-- render file --%>
           <div
