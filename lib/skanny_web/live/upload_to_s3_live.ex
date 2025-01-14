@@ -1,12 +1,13 @@
 defmodule SkannyWeb.UploadToS3Live do
   use SkannyWeb, :live_view
 
+  alias Skanny.CommonUtils
+
   require Logger
 
-  # TODO: remove MP4 file type
-  @allowed_file_types ~w(.jpg .jpeg .pdf .mp4)
-  @max_file_size_in_bytes 250_000_000
-  @max_entries 2
+  @allowed_file_types ~w(.jpg .jpeg .pdf)
+  @max_file_size_in_bytes 15_000_000
+  @max_entries 3
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
@@ -34,16 +35,16 @@ defmodule SkannyWeb.UploadToS3Live do
   @impl Phoenix.LiveView
   def handle_event("upload-files", _params, socket) do
     # This function will be call once all entries are succesfully uploaded.
-    # No need to implement any logic here since phx=hook="HandleUploadInProgress" will handle individual uploads in progress.
+    # No need to implement any logic here since the event handler for phx=hook="HandleUploadInProgress" will handle individual uploads in progress.
     {:noreply, socket}
   end
 
   def handle_event("handle-upload-in-progress", _params, socket) do
     # This hook will be trigger every time that the file element is updated.
-    # The S3 uploader will updated the progress of this element, thus, on every percentage updated this event will be triggered.
+    # The S3 uploader will update the progress of this element, thus, on every percentage updated this event will be triggered.
     entries = socket.assigns.uploads.jpg_jpeg_pdf.entries
 
-    # this validation save a lot of redundant operations by just applying the logic when an entry is done.
+    # this validation save a lot of redundant operations by just applying the logic when any entry is done.
     socket =
       if Enum.any?(entries, fn e -> e.done? end) do
         {uploaded, in_progress} = Enum.split_with(entries, fn e -> e.done? end)
@@ -60,11 +61,13 @@ defmodule SkannyWeb.UploadToS3Live do
 
   @impl Phoenix.LiveView
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
+    # TODO: cancel the upload, this is not cancelling the external upload
     {:noreply, cancel_upload(socket, :jpg_jpeg_pdf, ref)}
   end
 
   @impl Phoenix.LiveView
   def handle_event("delete-uploaded-file", %{"ref" => ref}, socket) do
+    # TODO: remove from S3
     file_to_remove = Enum.filter(socket.assigns.uploaded_files, fn f -> f.ref == ref end)
     {:noreply, update(socket, :uploaded_files, &(&1 -- file_to_remove))}
   end
@@ -195,7 +198,9 @@ defmodule SkannyWeb.UploadToS3Live do
   defp presign_upload(entry, socket) do
     config = ExAws.Config.new(:s3)
     bucket = "skanny-bucket"
-    key = "public/#{entry.upload_ref}--#{entry.client_name}"
+
+    file_name = "#{CommonUtils.generate_random_id()}--#{entry.client_name}"
+    key = "public/#{file_name}"
 
     {:ok, url} =
       ExAws.S3.presigned_url(config, :put, bucket, key,
@@ -226,12 +231,17 @@ defmodule SkannyWeb.UploadToS3Live do
       |> Enum.flat_map(fn e -> upload_errors(struct, e) end)
       |> Enum.empty?()
 
-    !(is_upload_ok? and are_entries_ok?)
+    Enum.empty?(struct.entries) or !(is_upload_ok? and are_entries_ok?)
   end
 end
 
-# TODO: disabled choose file button (line 97) while uploading file is in progress, check -> https://hexdocs.pm/phoenix_live_view/bindings.html
+# TODO: disabled choose file button while uploading file is in progress, check -> https://hexdocs.pm/phoenix_live_view/bindings.html
 # TODO: add preview button for every entry
 # TODO: add error on duplicate files rigth after user drop the files in the UI
 # TODO: raise error if max_file_size setup in config is greater than 5gb until point below is done
 # TODO: implement upload by chunk to allow uploads for large files -> https://hexdocs.pm/phoenix_live_view/uploads-external.html#chunked-http-uploads
+# TODO: Create template.yaml and script to deploy aws infrastructe
+#       - Create S3 bucket
+#       - Add CORS permission to bucket
+#       - Create user
+#       - Create s3-uploader role and attach to user
