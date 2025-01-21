@@ -44,6 +44,8 @@ defmodule SkannyWeb.UploadToS3Live do
     # The S3 uploader will update the progress of this element, thus, on every percentage updated this event will be triggered.
     entries = socket.assigns.uploads.jpg_jpeg_pdf.entries
 
+    Logger.debug("Uploads --> #{inspect(socket.assigns.uploads.jpg_jpeg_pdf)}")
+
     # this validation save a lot of redundant operations by just applying the logic when any entry is done.
     socket =
       if Enum.any?(entries, fn e -> e.done? end) do
@@ -85,7 +87,7 @@ defmodule SkannyWeb.UploadToS3Live do
       <div id="page-content" class="flex flex-col gap-8 p-8 w-full max-w-4xl">
         <%!-- welcome paragraph --%>
         <h1 id="welcome-paragraph" class="text-center">
-          <%= "Choose or Drop your documents or images here to upload them to your S3 bucket (supported files: #{@allowed_file_types})." %>
+          {"Choose or Drop your documents or images here to upload them to your S3 bucket (supported files: #{@allowed_file_types})."}
         </h1>
 
         <%!-- choose files and upload button --%>
@@ -123,7 +125,7 @@ defmodule SkannyWeb.UploadToS3Live do
           id="general-errors"
           class="rounded-lg p-2 border-2 border-red-500 text-center text-red-500 hover:bg-red-100"
         >
-          <%= error_to_string(err) %>
+          {error_to_string(err)}
         </div>
 
         <%!-- files to upload list --%>
@@ -141,7 +143,7 @@ defmodule SkannyWeb.UploadToS3Live do
             phx-hook="HandleUploadInProgress"
             class={[
               "flex flex-col rounded-lg py-2 px-4 gap-2 border-2",
-              if(file.valid?,
+              if(Enum.empty?(upload_errors(@uploads.jpg_jpeg_pdf, file)),
                 do: "border-green-500 hover:bg-green-100",
                 else: "border-red-500 hover:bg-red-100"
               )
@@ -149,17 +151,27 @@ defmodule SkannyWeb.UploadToS3Live do
           >
             <%!-- render error specific to each file --%>
             <div :for={err <- upload_errors(@uploads.jpg_jpeg_pdf, file)} class="text-red-500">
-              <%= error_to_string(err) %>
+              {error_to_string(err)}
             </div>
 
             <div class="flex gap-4 items-center">
               <div class="cursor-pointer">
                 <.icon phx-click="cancel-upload" phx-value-ref={file.ref} name="hero-trash" />
               </div>
-              <div :if={file.progress > 0}><.icon class="animate-spin" name="hero-arrow-path" /></div>
-              <div :if={file.progress > 0}><%= "#{file.progress}%" %></div>
-              <div class={["break-all", if(not file.valid?, do: "text-red-500")]}>
-                <%= file.client_name %>
+
+              <div :if={file.progress > 0 and Enum.empty?(upload_errors(@uploads.jpg_jpeg_pdf, file))}>
+                <.icon class="animate-spin" name="hero-arrow-path" />
+              </div>
+              <div :if={file.progress > 0 and Enum.empty?(upload_errors(@uploads.jpg_jpeg_pdf, file))}>
+                {"#{file.progress}%"}
+              </div>
+              <div class={[
+                "break-all",
+                if(not Enum.empty?(upload_errors(@uploads.jpg_jpeg_pdf, file)),
+                  do: "text-red-500"
+                )
+              ]}>
+                {file.client_name}
               </div>
             </div>
           </div>
@@ -175,19 +187,13 @@ defmodule SkannyWeb.UploadToS3Live do
           <div
             :for={file <- @uploaded_files}
             id={"uploaded-file-#{file.ref}"}
-            class={[
-              "flex items-center rounded-lg py-2 px-4 gap-2 border-2",
-              if(file.valid?,
-                do: "border-green-500 hover:bg-green-100",
-                else: "border-red-500 hover:bg-red-100"
-              )
-            ]}
+            class="flex items-center rounded-lg py-2 px-4 gap-2 border-2 border-green-500 hover:bg-green-100"
           >
             <div class="cursor-pointer">
               <.icon phx-click="delete-uploaded-file" phx-value-ref={file.ref} name="hero-trash" />
             </div>
             <div><.icon class="text-green-500" name="hero-check" /></div>
-            <div class="break-all"><%= file.client_name %></div>
+            <div class="break-all">{file.client_name}</div>
           </div>
         </div>
       </div>
