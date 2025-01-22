@@ -60,6 +60,8 @@ defmodule Skanny.MixProject do
       {:bandit, "~> 1.5"},
       {:ex_aws, "~> 2.5.7"},
       {:ex_aws_s3, "~> 2.0"},
+      # configparser_ex is an optional dependency of ex_aws to read configs for specific aws profile under ~/.aws/credentials and ~/.aws/config
+      {:configparser_ex, "~> 4.0"},
       {:hackney, "~> 1.9"},
       {:sweet_xml, "~> 0.6"},
 
