@@ -61,10 +61,10 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Learn more about this config at: https://hexdocs.pm/ex_aws/2.5.7/readme.html#aws-key-configuration
 config :ex_aws,
-  region: {:system, "AWS_REGION"},
-  access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}],
-  secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}]
+  access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, {:awscli, "skanny", 30}],
+  secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, {:awscli, "skanny", 30}]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
